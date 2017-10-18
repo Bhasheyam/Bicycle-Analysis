@@ -7,6 +7,28 @@ Description :
 ---
 
 ```{r}
+datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/day.csv")
+fix(data)
+```
+
+```{r}
+cor(Filter(is.numeric,datacy))
+```
+```{r}
+fit.lm=lm(datacy$cnt ~ datacy$season+datacy$mnth)
+summary(fit.lm)
+plot(fit.lm)
+```
+```{r}
+fit.lm=lm(datacy$casual ~ data$season+datacy$weathersit)
+summary(fit.lm)
+plot(fit.lm)
+```
+```{r}
+plot(datacy$weathersit,datacy$casual)
+plot(datacy$season,datacy$casual)
+```
+```{r}
 
 ```
 
