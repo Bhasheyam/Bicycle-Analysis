@@ -8,10 +8,11 @@ Description :
 
 ```{r}
 datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/day.csv")
-fix(data)
+fix(datacy)
 ```
 
 ```{r}
+dim(datacy)
 cor(Filter(is.numeric,datacy))
 ```
 ```{r}
@@ -28,7 +29,63 @@ plot(fit.lm)
 plot(datacy$weathersit,datacy$casual)
 plot(datacy$season,datacy$casual)
 ```
-```{r}
 
+```{r}
+datacy$countclass = apply(datacy, 1, function(x)  x[16] > mean(datacy$cnt ))
+datacy$countclass
+
+```
+
+
+
+```{r}
+set.seed(123)
+jumble = runif(nrow(datacy))
+datacy = datacy[ordered(jumble),]
+sampleindex = sample(2, nrow(datacy),replace = TRUE, prob = c(0.80, 0.20))
+Train = datacy[sampleindex == 1,]
+Test = datacy[sampleindex == 2,]
+x = Train$season + Train$temp + Train$atemp  + Train$hum + Train$windspeed + Train$holiday
+
+fit = glm( Train$countclass ~ x, data = Train, family = binomial)
+summary(fit)
+  
+  
+```
+
+```{r}
+predicted = predict(fit,type = 'response')
+table(Train$countclass,predicted > 0.5)
+```
+```{r}
+library(ROCR)
+ROCRpred <- prediction(predicted, Train$countclass)
+ROCRperf <- performance(ROCRpred, 'tpr','fpr')
+plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
+```
+
+```{r}
+set.seed(123)
+jumble = runif(nrow(datacy))
+datacy = datacy[ordered(jumble),]
+sampleindex = sample(2, nrow(datacy),replace = TRUE, prob = c(0.80, 0.20))
+Train = datacy[sampleindex == 1,]
+Test = datacy[sampleindex == 2,]
+x = Train$season + Train$holiday + Train$weekday + Train$workingday + Train$temp + Train$atemp  + Train$hum + Train$windspeed + Train$holiday
+
+fit1 = glm( Train$countclass ~ x, data = Train, family = binomial)
+summary(fit1)
+  
+
+```
+```{r}
+predicted1 = predict(fit1,type = 'response')
+table(Train$countclass,predicted > 0.5)
+```
+```{r}
+library(ROCR)
+ROCRpred <- prediction(predicted1, Train$countclass)
+ROCRperf <- performance(ROCRpred, 'tpr','fpr')
+plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
 ```
 
