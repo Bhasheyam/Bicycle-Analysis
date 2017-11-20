@@ -1,20 +1,143 @@
 ---
-title: "Bycycle Analysis"
-author: "Bhasheyam"
+title: "Bycycle Analysis R code"
+author: "Bhasheyam and Hemanth"
 date: "18 October 2017"
 output: word_document
 Description : 
 ---
+
+# Read the Data
 
 ```{r}
 datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/day.csv")
 fix(datacy)
 ```
 
+
+
+# Outliers are removed from the data
+```{r}
+boxplot(Filter(is.numeric,datacy))
+```
+
+# from the above we are able to see hum, windspeed, has some outliers
+
+
+```{r}
+boxplot(datacy$hum)
+boxplot(datacy$windspeed)
+```
+
+```{r}
+changed = datacy$windspeed[datacy$windspeed<0.38]
+boxplot(changed)
+changed1 = datacy$windspeed[ datacy$windspeed >0.18 & datacy$windspeed < 0.40]
+boxplot(changed1)
+```
+
+
+#After Removing the Outliers:
+
+```{r}
+dim(datacy)
+datacycle = datacy[datacy$windspeed < 0.37 & datacy$hum > 0.20,]
+dim(datacycle)
+```
+
+18 Instance are removed as they have outliers
+
+```{r}
+boxplot(Filter(is.numeric,datacycle))
+boxplot(datacycle$windspeed)
+```
+
+# to find the better model and learning of the data 
+
+Lets Introduced new column as Contclass
+
+# analysis 1)
+    contclass = True -> High
+    contclass = False -> Low
+
+# analysis 2) 
+    contclass = 0 -> low
+    contclass = 1 -> medium
+    contclass = 2 -> High
+   
+```{r}
+summary(datacycle$cnt)
+```
+
+```{r}
+classsplit = mean(datacycle$cnt)
+class1 = function(x){
+  if (x > classsplit){
+    return (1)
+  }
+  else{
+    return(0)
+  }
+  
+}
+
+class2 = function(x){
+  if(x > 5790 )
+    {
+    return(2)
+  }
+  else if(x > 2870)
+  {
+    return(1)
+  }
+  else
+    {
+    return(0)
+  }
+  
+}
+datacycle1 = datacycle
+datacyle$contclass = apply(datacycle,1,function(x) datacycle$cnt>)
+
+
+```
+```{r}
+datacycle
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r}
 dim(datacy)
 cor(Filter(is.numeric,datacy))
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r}
 fit.lm=lm(datacy$cnt ~ datacy$season+datacy$mnth)
 summary(fit.lm)
@@ -45,13 +168,20 @@ datacy = datacy[ordered(jumble),]
 sampleindex = sample(2, nrow(datacy),replace = TRUE, prob = c(0.80, 0.20))
 Train = datacy[sampleindex == 1,]
 Test = datacy[sampleindex == 2,]
+  
+```
+
+
+
+
+```{r}
 x = Train$season + Train$temp + Train$atemp  + Train$hum + Train$windspeed + Train$holiday
 
 fit = glm( Train$countclass ~ x, data = Train, family = binomial)
 summary(fit)
   
-  
 ```
+
 
 ```{r}
 predicted = predict(fit,type = 'response')
@@ -72,7 +202,6 @@ sampleindex = sample(2, nrow(datacy),replace = TRUE, prob = c(0.80, 0.20))
 Train = datacy[sampleindex == 1,]
 Test = datacy[sampleindex == 2,]
 x = Train$season + Train$holiday + Train$weekday + Train$workingday + Train$temp + Train$atemp  + Train$hum + Train$windspeed + Train$holiday
-
 fit1 = glm( Train$countclass ~ x, data = Train, family = binomial)
 summary(fit1)
   
