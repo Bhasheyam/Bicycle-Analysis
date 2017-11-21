@@ -96,7 +96,7 @@ class2 = function(x){
   
 }
 datacycle1 = datacycle
-datacyle$contclass = apply(datacycle,1,function(x) datacycle$cnt>)
+datacyle$contclass = apply(datacycle,1,function(x) datacycle$cnt> x)
 
 
 ```
@@ -216,5 +216,10 @@ library(ROCR)
 ROCRpred <- prediction(predicted1, Train$countclass)
 ROCRperf <- performance(ROCRpred, 'tpr','fpr')
 plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
+```
+
+```{r}
+library(mlr)
+traintask = makeClassifTask(data = Train - dteday , target = "countclass")
 ```
 
