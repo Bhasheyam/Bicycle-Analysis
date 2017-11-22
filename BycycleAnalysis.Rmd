@@ -58,6 +58,95 @@ Lets Introduced new column as Contclass
 # analysis 1)
     contclass = True -> High
     contclass = False -> Low
+    
+    
+    
+```{r}
+datacy$countclass = apply(datacy, 1, function(x)  x[16] > mean(datacy$cnt ))
+set.seed(123)
+jumble = runif(nrow(datacy))
+datacy = datacy[ordered(jumble),]
+sampleindex = sample(2, nrow(datacy),replace = TRUE, prob = c(0.80, 0.20))
+Train = datacy[sampleindex == 1,]
+Test = datacy[sampleindex == 2,]
+
+```
+
+
+# creating train and test task for the classifier analysis
+```{r}
+library(mlr)
+traintaskf = makeClassifTask(data = Train  ,target = "countclass")
+traintask  = makeClassifTask(data = Train  ,target = "countclass" , positive = "TRUE")
+traintask = dropFeatures(task = traintaskf, features = c("dteday","instant","yr","mnth","cnt"))
+testtaskf = makeClassifTask(data = Test  ,target = "countclass")
+testtask = dropFeatures(task = testtaskf, features = c("dteday","instant","yr","mnth","cnt"))
+traintask$type
+```
+# Drop features
+
+
+
+# classifir -1 QDA - Quadratic Discriminant Analysis 
+```{r}
+cycleqda<- makeLearner("classif.qda", predict.type = "response")
+cyclequdatrain = train(cycleqda, task = traintask)
+qdapredict = predict(cyclequdatrain, testtask)
+table(Test$countclass, qdapredict$data$response)
+
+
+```
+
+#classifier - 2 Logistic Regression
+```{r}
+cyclelr =  makeLearner("classif.logreg", predict.type = "response")
+cyclequdatrain = train(cyclelr, task = traintask)
+logrpredict = predict(cyclequdatrain, testtask)
+table(Test$countclass, logrpredict$data$response)
+d = as.data.frame(logrpredict$data$response)
+d = cbind(d,Test$countclass )
+d
+```
+
+#classifier 3 - Desicion tree
+
+```{r}
+cycletree =  makeLearner("classif.rpart", predict.type = "response")
+ 
+
+treecv =  makeResampleDesc("CV",iters = 3L)
+
+
+param = makeParamSet(
+makeIntegerParam("minsplit",lower = 10, upper = 50),
+makeIntegerParam("minbucket", lower = 5, upper = 50),
+makeNumericParam("cp", lower = 0.001, upper = 0.2)
+)
+
+
+control = makeTuneControlGrid()
+
+treetune <- tuneParams(learner = cycletree, resampling = treecv, task = traintask, par.set = param, control = control, measures = acc)
+
+```
+
+
+
+```{r}
+treetune$x
+tree = setHyperPars(cycletree, par.vals = treetune$x)
+traintree = train(tree, traintask)
+predicttree = predict(traintree, testtask)
+table(Test$countclass,predicttree$data$response)
+```
+```{r}
+plot(traintree$learner.model)
+text(traintree$learner.model)
+```
+```{r}
+library(rpart.plot)
+prp(traintree$learner.model)
+```
 
 # analysis 2) 
     contclass = 0 -> low
