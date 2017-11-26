@@ -9,8 +9,10 @@ Description :
 # Read the Data
 
 ```{r}
-datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/day.csv")
+datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/hour.csv")
+dim(datacy)
 fix(datacy)
+
 ```
 
 
@@ -31,8 +33,6 @@ boxplot(datacy$windspeed)
 ```{r}
 changed = datacy$windspeed[datacy$windspeed<0.38]
 boxplot(changed)
-changed1 = datacy$windspeed[ datacy$windspeed >0.18 & datacy$windspeed < 0.40]
-boxplot(changed1)
 ```
 
 
@@ -44,46 +44,74 @@ datacycle = datacy[datacy$windspeed < 0.37 & datacy$hum > 0.20,]
 dim(datacycle)
 ```
 
-18 Instance are removed as they have outliers
+1392 Instance are removed as they have outliers
 
 ```{r}
 boxplot(Filter(is.numeric,datacycle))
 boxplot(datacycle$windspeed)
 ```
 
+
+
+
+
+
+
 # to find the better model and learning of the data 
 
 Lets Introduced new column as Contclass
 
-# analysis 1)
+# analysis 1 - for the Count
     contclass = True -> High
     contclass = False -> Low
     
     
     
 ```{r}
-datacy$countclass = apply(datacy, 1, function(x)  x[16] > mean(datacy$cnt ))
+datacycle$countclass = apply(datacycle, 1, function(x)  x[17] > mean(datacycle$cnt ))
 set.seed(123)
-jumble = runif(nrow(datacy))
-datacy = datacy[ordered(jumble),]
-sampleindex = sample(2, nrow(datacy),replace = TRUE, prob = c(0.80, 0.20))
-Train = datacy[sampleindex == 1,]
-Test = datacy[sampleindex == 2,]
+jumble = runif(nrow(datacycle))
+datacycle = datacycle[ordered(jumble),]
+sampleindex = sample(2, nrow(datacycle),replace = TRUE, prob = c(0.80, 0.20))
+Train = datacycle[sampleindex == 1,]
+Test = datacycle[sampleindex == 2,]
+dim(Train)
+dim(Test)
+```
 
+
+
+
+```{r}
+tdata = Train[3:14]
+tdata = cbind(tdata,Train[18])
+
+```
+
+
+```{r}
+library(OneR)
+m =  optbin(tdata)
+mod = OneR(m)
+summary(mod)
+```
+```{r}
+predictmod = predict(mod,Test)
+eval_model(predictmod, Test)
 ```
 
 
 # creating train and test task for the classifier analysis
+# Drop features
 ```{r}
 library(mlr)
 traintaskf = makeClassifTask(data = Train  ,target = "countclass")
 traintask  = makeClassifTask(data = Train  ,target = "countclass" , positive = "TRUE")
-traintask = dropFeatures(task = traintaskf, features = c("dteday","instant","yr","mnth","cnt"))
+traintask = dropFeatures(task = traintaskf, features = c("dteday","instant","cnt","registered","casual"))
 testtaskf = makeClassifTask(data = Test  ,target = "countclass")
-testtask = dropFeatures(task = testtaskf, features = c("dteday","instant","yr","mnth","cnt"))
-traintask$type
+testtask = dropFeatures(task = testtaskf, features = c("dteday","instant","cnt","registered","casual"))
 ```
-# Drop features
+
 
 
 
@@ -97,16 +125,18 @@ table(Test$countclass, qdapredict$data$response)
 
 ```
 
+
+Here the Accuracy is 81 %
+
 #classifier - 2 Logistic Regression
 ```{r}
 cyclelr =  makeLearner("classif.logreg", predict.type = "response")
 cyclequdatrain = train(cyclelr, task = traintask)
 logrpredict = predict(cyclequdatrain, testtask)
 table(Test$countclass, logrpredict$data$response)
-d = as.data.frame(logrpredict$data$response)
-d = cbind(d,Test$countclass )
-d
 ```
+
+Accuracy is 77%
 
 #classifier 3 - Desicion tree
 
@@ -114,13 +144,13 @@ d
 cycletree =  makeLearner("classif.rpart", predict.type = "response")
  
 
-treecv =  makeResampleDesc("CV",iters = 3L)
+treecv =  makeResampleDesc("CV",iters = 10L)
 
 
 param = makeParamSet(
-makeIntegerParam("minsplit",lower = 10, upper = 50),
-makeIntegerParam("minbucket", lower = 5, upper = 50),
-makeNumericParam("cp", lower = 0.001, upper = 0.2)
+makeIntegerParam("minsplit",lower = 10, upper = 20),
+makeIntegerParam("minbucket", lower = 5, upper = 10),
+makeNumericParam("cp", lower = 0.001, upper = 0.1)
 )
 
 
@@ -139,6 +169,9 @@ traintree = train(tree, traintask)
 predicttree = predict(traintree, testtask)
 table(Test$countclass,predicttree$data$response)
 ```
+
+Here the Acuuracy is 91%
+
 ```{r}
 plot(traintree$learner.model)
 text(traintree$learner.model)
@@ -147,119 +180,193 @@ text(traintree$learner.model)
 library(rpart.plot)
 prp(traintree$learner.model)
 ```
-
-# analysis 2) 
-    contclass = 0 -> low
-    contclass = 1 -> medium
-    contclass = 2 -> High
-   
 ```{r}
-summary(datacycle$cnt)
-```
-
-```{r}
-classsplit = mean(datacycle$cnt)
-class1 = function(x){
-  if (x > classsplit){
-    return (1)
-  }
-  else{
-    return(0)
-  }
-  
-}
-
-class2 = function(x){
-  if(x > 5790 )
-    {
-    return(2)
-  }
-  else if(x > 2870)
-  {
-    return(1)
-  }
-  else
-    {
-    return(0)
-  }
-  
-}
-datacycle1 = datacycle
-datacyle$contclass = apply(datacycle,1,function(x) datacycle$cnt> x)
-
-
-```
-```{r}
-datacycle
+library(rattle)	
+fancyRpartPlot(traintree$learner.model)	
 ```
 
 
+# random forest classfier
 
+```{r}
 
+randomforest = makeLearner("classif.randomForest",predict.type = "response", par.vals = list(ntree = 200, mtry = 3))
+randomforest$par.vals = list(importance = TRUE)
 
+randomparam <- makeParamSet(
+makeIntegerParam("ntree",lower = 50, upper = 450),
+makeIntegerParam("mtry", lower = 3, upper = 10),
+makeIntegerParam("nodesize", lower = 10, upper = 40)
+)
+randomcontrol = makeTuneControlRandom(maxit = 30L)
+randomcross = makeResampleDesc("CV",iter =  10L)
+randomtune <- tuneParams(learner = randomforest, resampling = randomcross, task = traintask, par.set = randomparam, control = randomcontrol, measures = acc)
 
-
-
-
-
-
-
-
-
-
-
+```
 
 
 ```{r}
-dim(datacy)
-cor(Filter(is.numeric,datacy))
+randomtune$y
+```
+
+
+```{r}
+randomtune$x
+```
+
+```{r}
+randomtree = setHyperPars(randomforest, par.vals = randomtune$x)
+randomtrain = train(randomtree, traintask)
+getLearnerModel(randomtrain)
+
+```
+
+
+```{r}
+randompredict = predict(randomtrain,testtask)
+table(Test$countclass, randompredict$data$response)
 ```
 
 
 
 
 
-
-
-
-
-
-
-
-
 ```{r}
-fit.lm=lm(datacy$cnt ~ datacy$season+datacy$mnth)
-summary(fit.lm)
-plot(fit.lm)
-```
-```{r}
-fit.lm=lm(datacy$casual ~ data$season+datacy$weathersit)
-summary(fit.lm)
-plot(fit.lm)
-```
-```{r}
-plot(datacy$weathersit,datacy$casual)
-plot(datacy$season,datacy$casual)
+svmlearner = makeLearner("classif.ksvm", predict.type = "response")
+
+randomcross = makeResampleDesc("CV",iters = 10L)
+
+svmparameter<- makeParamSet(makeNumericParam("C", lower = -5, upper = 5, trafo = function(x) 2^x),
+                            makeDiscreteParam("sigma", values = 2^c(-8,-4,0,4))) #RBF Kernel Parameter
+
+svmcontrol = makeTuneControlGrid()
+svmtune= tuneParams("classif.ksvm", task = traintask, resampling = randomcross, par.set  = svmparameter, control = svmcontrol, measures = acc)
 ```
 
 ```{r}
-datacy$countclass = apply(datacy, 1, function(x)  x[16] > mean(datacy$cnt ))
-datacy$countclass
-
+svmtune$y
 ```
 
 
 
 ```{r}
-set.seed(123)
-jumble = runif(nrow(datacy))
-datacy = datacy[ordered(jumble),]
-sampleindex = sample(2, nrow(datacy),replace = TRUE, prob = c(0.80, 0.20))
-Train = datacy[sampleindex == 1,]
-Test = datacy[sampleindex == 2,]
-  
+svmtune$x
 ```
 
+```{r}
+svmmodel = setHyperPars(svmlearner,par.vals = svmtune$x)
+svmtrain = train(svmmodel, traintask)
+getLearnerModel(svmtrain)
+```
+```{r}
+predictsvm = predict(svmtrain, testtask)
+table (Test$countclass , predictsvm$data$response)
+```
+0.87
+
+
+#bossting
+```{r}
+boost = makeLearner("classif.gbm", predict.type = "response")
+
+gbmcontrol =  makeTuneControlRandom(maxit = 40L)
+
+gbmcv = makeResampleDesc("CV",iters = 10L)
+
+
+
+
+
+
+gbmparam =  makeParamSet(makeDiscreteParam("distribution", values = "bernoulli"),
+makeIntegerParam("n.trees", lower = 500, upper = 1000), #number of trees
+makeIntegerParam("interaction.depth", lower = 2, upper = 6), #depth of tree
+makeIntegerParam("n.minobsinnode", lower = 10, upper = 50),
+makeNumericParam("shrinkage",lower = 0.01, upper = 0.7))
+
+
+
+gbmtune = tuneParams(learner = boost, task = traintask, par.set = gbmparam, control = gbmcontrol, measures = acc, resampling = gbmcv)
+```
+
+
+
+```{r}
+gbmtune$y
+```
+
+
+```{r}
+gbmtune$x
+```
+
+
+```{r}
+gbmboost = setHyperPars(boost,par.vals = gbmtune$x)
+```
+```{r}
+gbmtrain = train(gbmboost,traintask)
+gbmpredict = predict(gbmtrain,testtask)
+table(Test$countclass,gbmpredict$data$response)
+```
+
+
+94 % Accuracy
+
+#lda
+
+```{r}
+ldalearner = makeLearner("classif.lda", predict.type = "response")
+ldatrain = train(ldalearner, traintask)
+predictlda = predict(ldatrain, testtask)
+table(Test$countclass, predictlda$data$response)
+```
+
+
+the accuracy is 77%
+#svm linear
+
+```{r}
+svmlearnerl = makeLearner("classif.ksvm", predict.type = "response")
+
+randomcross = makeResampleDesc("CV",iters = 3L)
+
+svmparameter<- makeParamSet(makeNumericParam("C", lower = -5, upper = 5, trafo = function(x) 2^x))
+
+
+svmcontrol = makeTuneControlGrid()
+svmtunel = tuneParams(svmlearnerl, task = traintask, resampling = randomcross, par.set  = svmparameter, control = svmcontrol, measures = acc)
+```
+
+
+
+```{r}
+svmtune$x
+
+```
+
+
+
+
+```{r}
+svmtunel$y
+```
+
+
+
+```{r}
+svmmodell = setHyperPars(svmlearnerl,par.vals = svmtunel$x)
+svmtrainl = train(svmmodell, traintask)
+getLearnerModel(svmtrainl)
+
+```
+
+
+```{r}
+predictsvml = predict(svmtrainl, testtask)
+table (Test$countclass, predictsvml$data$response)
+```
+the accuracy is 88%
 
 
 
@@ -294,6 +401,8 @@ x = Train$season + Train$holiday + Train$weekday + Train$workingday + Train$temp
 fit1 = glm( Train$countclass ~ x, data = Train, family = binomial)
 summary(fit1)
   
+
+
 
 ```
 ```{r}
