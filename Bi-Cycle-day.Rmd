@@ -1,4 +1,10 @@
 ---
+title: "Second analysis"
+author: "Bhasheyam, Hemath"
+date: "26 November 2017"
+output: word_document
+---
+---
 title: "Bi-cycle Analysis R code"
 author: "Bhasheyam and Hemanth"
 date: "18 October 2017"
@@ -9,7 +15,7 @@ output: word_document
 # Read the Data
 
 ```{r}
-datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/hour.csv")
+datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/day.csv")
 dim(datacy)
 fix(datacy)
 
@@ -68,7 +74,7 @@ Lets Introduced new column as Contclass
     
     
 ```{r}
-datacycle$countclass = apply(datacycle, 1, function(x)  x[17] > mean(datacycle$cnt ))
+datacycle$countclass = apply(datacycle, 1, function(x)  x[16] > mean(datacycle$cnt ))
 set.seed(123)
 jumble = runif(nrow(datacycle))
 datacycle = datacycle[ordered(jumble),]
@@ -84,7 +90,7 @@ dim(Test)
 
 ```{r}
 tdata = Train[3:14]
-tdata = cbind(tdata,Train[18])
+tdata = cbind(tdata,Train[17])
 
 ```
 
@@ -213,7 +219,7 @@ logrpredict = predict(cyclequdatrain, testtask)
 table(Test$countclass, logrpredict$data$response)
 ```
 
-Accuracy is 77%
+Accuracy is 85%
 
 #classifier 3 - Desicion tree
 
@@ -247,7 +253,7 @@ predicttree = predict(traintree, testtask)
 table(Test$countclass,predicttree$data$response)
 ```
 
-Here the Acuuracy is 91%
+Here the Acuuracy is 88%
 
 ```{r}
 plot(traintree$learner.model)
@@ -303,7 +309,7 @@ getLearnerModel(randomtrain)
 randompredict = predict(randomtrain,testtask)
 table(Test$countclass, randompredict$data$response)
 ```
-
+91% Accuracy
 
 
 
@@ -339,7 +345,7 @@ getLearnerModel(svmtrain)
 predictsvm = predict(svmtrain, testtask)
 table (Test$countclass , predictsvm$data$response)
 ```
-0.87
+0.88% accuracy
 
 
 #bossting
@@ -388,7 +394,7 @@ table(Test$countclass,gbmpredict$data$response)
 ```
 
 
-94 % Accuracy
+89 % Accuracy
 
 #lda
 
@@ -400,7 +406,7 @@ table(Test$countclass, predictlda$data$response)
 ```
 
 
-the accuracy is 77%
+the accuracy is 86%
 #svm linear
 
 ```{r}
@@ -453,14 +459,14 @@ library(class)
 
 Train1 = Train[3:14]
 Test1 = Test[3:14]
-model=knn(train=Train1,test = Test1, cl=Train$countclass,k=10)
+model=knn(train=Train1,test = Test1, cl=Train$countclass,k=15)
 summary(model)
 table(Test$countclass,model)
 ```
 
 
 
-For k = 10 accuracy is 93%
+For k = 10 accuracy is 89%
 
 for Higher the K value, the results are not better as the cluster stays very close to each other.
 
@@ -468,6 +474,8 @@ for Higher the K value, the results are not better as the cluster stays very clo
 ```{r}
 names(Train)
 ```
+
+
 
 
 
