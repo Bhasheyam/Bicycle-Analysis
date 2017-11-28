@@ -26,8 +26,8 @@ boxplot(Filter(is.numeric,datacy))
 
 
 ```{r}
-boxplot(datacy$hum)
-boxplot(datacy$windspeed)
+boxplot(datacy$windspeed,datacy$hum ,names=c("windspeed","hummidity"))
+
 ```
 
 ```{r}
@@ -47,8 +47,10 @@ dim(datacycle)
 1392 Instance are removed as they have outliers
 
 ```{r}
-boxplot(Filter(is.numeric,datacycle))
-boxplot(datacycle$windspeed)
+
+
+boxplot(datacycle$windspeed,datacycle$hum ,names=c("windspeed","hummidity"))
+
 ```
 
 
@@ -237,6 +239,9 @@ treetune <- tuneParams(learner = cycletree, resampling = treecv, task = traintas
 
 ```
 
+```{r}
+treetune$y
+```
 
 
 ```{r}
@@ -248,6 +253,9 @@ table(Test$countclass,predicttree$data$response)
 ```
 
 Here the Acuuracy is 91%
+```{r}
+summary(traintree)
+```
 
 ```{r}
 plot(traintree$learner.model)

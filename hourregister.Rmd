@@ -1,9 +1,10 @@
 ---
-title: "Second analysis"
+title: "Register"
 author: "Bhasheyam, Hemath"
-date: "26 November 2017"
-output: word_document
+date: "27 November 2017"
+output: html_document
 ---
+
 ---
 title: "Bi-cycle Analysis R code"
 author: "Bhasheyam and Hemanth"
@@ -15,7 +16,7 @@ output: word_document
 # Read the Data
 
 ```{r}
-datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/day.csv")
+datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/hour.csv")
 dim(datacy)
 fix(datacy)
 
@@ -74,7 +75,7 @@ Lets Introduced new column as Contclass
     
     
 ```{r}
-datacycle$countclass = apply(datacycle, 1, function(x)  x[16] > mean(datacycle$cnt ))
+datacycle$countclass = apply(datacycle, 1, function(x)  x[16] > mean(datacycle$registered ))
 set.seed(123)
 jumble = runif(nrow(datacycle))
 datacycle = datacycle[ordered(jumble),]
@@ -90,7 +91,7 @@ dim(Test)
 
 ```{r}
 tdata = Train[3:14]
-tdata = cbind(tdata,Train[17])
+tdata = cbind(tdata,Train[18])
 
 ```
 
@@ -105,90 +106,6 @@ summary(mod)
 predictmod = predict(mod,Test)
 eval_model(predictmod, Test)
 ```
-### LINEAR REGRESSION
-```{r}
-scatter.smooth(x=Train$registered, y=Train$cnt, main="Causal ~ Count")
-scatter.smooth(x=Train$casual, y=Train$cnt, main="Causal ~ Count")
-```
-```{r}
-##Partioning the dataset to registered users & causal users
-x_data = subset(datacycle, select = -c(cnt, countclass))
-y_data = subset(datacycle, select = cnt)
-x_data = subset(x_data, select = -registered)
-x_data = subset(x_data, select = -casual)
-```
-
-```{r}
-## Partioning 
-#casual
-ytrain_casual = Train['casual']
-ytest_casual = Test['casual']
-
-xtrain_casual = subset(Train, select = -c(casual, registered, cnt))
-xtest_casual = subset(Test, select = -c( casual, countclass, cnt))
-
-
-
-```
-
-```{r}
-x_train = subset(Train, select = -c(registered, cnt, instant, dteday, countclass))
-x_test = subset(Test, select = -c(registered, cnt, instant, dteday, countclass))
-```
-
-```{r}
-lmMod <- lm(x_train$casual~. ,  data=x_train)
-summary(lmMod)
-```
-
-```{r}
-casual_predict = predict(lmMod, x_test)
-actuals_preds <- data.frame(cbind(actuals=x_test$casual, predicteds=casual_predict))
-cor(actuals_preds) 
-head(actuals_preds)
-```
-## 68.3% test accuracy for causal users 
-```{r}
-xtrain_reg = subset(Train, select = -c(casual, cnt, instant, dteday, countclass))
-xtest_reg = subset(Test, select = -c(casual, cnt, instant, dteday, countclass))
-```
-
-```{r}
-lmMod_reg <- lm(xtrain_reg$registered~. ,  data=xtrain_reg)
-reg_predict = predict(lmMod_reg, xtest_reg)
-actuals_preds_reg <- data.frame(cbind(actuals=xtest_reg$registered, predicteds=reg_predict))
-cor(actuals_preds_reg)
-```
-```{r}
-summary(lmMod_reg)
-```
-
-
-
-## 55.7% test accuracy for registered users
-
-#Transformed Linear Regreession
-```{r}
-Train_cpy = Train
-Test_cpy = Test
-
-```
-
-#Convert the cnt to Log
-```{r}
-Train_cpy$log_cnt = log(Train$cnt)
-Test_cpy$log_cnt = log(Test$cnt)
-xtrain_log = subset(Train_cpy, select = -c(registered, casual, cnt, instant, dteday, countclass))
-xtest_log = subset(Test_cpy, select = -c(casual, registered, cnt, instant, dteday, countclass))
-```
-
-```{r}
-lmMod_log <- lm(xtrain_log$log_cnt~. ,  data=xtrain_log)
-log_predict = predict(lmMod_log, xtest_log)
-actuals_preds_log <- data.frame(cbind(actuals=xtest_log$log_cnt, predicteds=log_predict))
-cor(actuals_preds_log)
-```
-## 68.91% accuracy 
 
 # creating train and test task for the classifier analysis
 # Drop features
@@ -215,7 +132,7 @@ table(Test$countclass, qdapredict$data$response)
 ```
 
 
-Here the Accuracy is 81 %
+Here the Accuracy is 79 %
 
 #classifier - 2 Logistic Regression
 ```{r}
@@ -225,7 +142,7 @@ logrpredict = predict(cyclequdatrain, testtask)
 table(Test$countclass, logrpredict$data$response)
 ```
 
-Accuracy is 85%
+Accuracy is 77%
 
 #classifier 3 - Desicion tree
 
@@ -249,9 +166,6 @@ treetune <- tuneParams(learner = cycletree, resampling = treecv, task = traintas
 
 ```
 
-```{r}
-treetune$y
-```
 
 
 ```{r}
@@ -261,8 +175,11 @@ traintree = train(tree, traintask)
 predicttree = predict(traintree, testtask)
 table(Test$countclass,predicttree$data$response)
 ```
+```{r}
+treetune$y
+```
 
-Here the Acuuracy is 88%
+Here the Acuuracy is 91%
 
 ```{r}
 plot(traintree$learner.model)
@@ -318,7 +235,7 @@ getLearnerModel(randomtrain)
 randompredict = predict(randomtrain,testtask)
 table(Test$countclass, randompredict$data$response)
 ```
-91% Accuracy
+
 
 
 
@@ -354,7 +271,7 @@ getLearnerModel(svmtrain)
 predictsvm = predict(svmtrain, testtask)
 table (Test$countclass , predictsvm$data$response)
 ```
-0.88% accuracy
+0.87
 
 
 #bossting
@@ -403,7 +320,7 @@ table(Test$countclass,gbmpredict$data$response)
 ```
 
 
-89 % Accuracy
+94 % Accuracy
 
 #lda
 
@@ -415,7 +332,7 @@ table(Test$countclass, predictlda$data$response)
 ```
 
 
-the accuracy is 86%
+the accuracy is 77%
 #svm linear
 
 ```{r}
@@ -458,7 +375,7 @@ getLearnerModel(svmtrainl)
 predictsvml = predict(svmtrainl, testtask)
 table (Test$countclass, predictsvml$data$response)
 ```
-the accuracy is 88%
+the accuracy is 86%
 ```{r}
 dim(Train)
 ```
@@ -468,14 +385,14 @@ library(class)
 
 Train1 = Train[3:14]
 Test1 = Test[3:14]
-model=knn(train=Train1,test = Test1, cl=Train$countclass,k=15)
+model=knn(train=Train1,test = Test1, cl=Train$countclass,k=10)
 summary(model)
 table(Test$countclass,model)
 ```
 
 
 
-For k = 10 accuracy is 89%
+For k = 10 accuracy is 92%
 
 for Higher the K value, the results are not better as the cluster stays very close to each other.
 
@@ -483,8 +400,6 @@ for Higher the K value, the results are not better as the cluster stays very clo
 ```{r}
 names(Train)
 ```
-
-
 
 
 

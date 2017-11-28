@@ -1,0 +1,98 @@
+---
+title: "casualcheck"
+author: "Bhasheyam, Hemath"
+date: "27 November 2017"
+output: html_document
+---
+
+```{r}
+datacy=read.csv("B:/MS/Fall-2017/ML/Project/Bycycle/Data/hour.csv")
+dim(datacy)
+fix(datacy)
+
+```
+
+
+
+# Outliers are removed from the data
+```{r}
+boxplot(Filter(is.numeric,datacy))
+```
+
+# from the above we are able to see hum, windspeed, has some outliers
+
+
+```{r}
+boxplot(datacy$hum)
+boxplot(datacy$windspeed)
+```
+
+```{r}
+changed = datacy$windspeed[datacy$windspeed<0.38]
+boxplot(changed)
+```
+
+
+#After Removing the Outliers:
+
+```{r}
+dim(datacy)
+datacycle = datacy[datacy$windspeed < 0.37 & datacy$hum > 0.20,]
+dim(datacycle)
+```
+
+1392 Instance are removed as they have outliers
+
+```{r}
+boxplot(Filter(is.numeric,datacycle))
+boxplot(datacycle$windspeed)
+```
+
+
+
+
+
+
+
+# to find the better model and learning of the data 
+
+Lets Introduced new column as Contclass
+
+# analysis 1 - for the Count
+    contclass = True -> High
+    contclass = False -> Low
+    
+    
+    
+```{r}
+datacycle$countclass = apply(datacycle, 1, function(x)  x[16] > mean(datacycle$registered ))
+set.seed(123)
+jumble = runif(nrow(datacycle))
+datacycle = datacycle[ordered(jumble),]
+sampleindex = sample(2, nrow(datacycle),replace = TRUE, prob = c(0.80, 0.20))
+Train = datacycle[sampleindex == 1,]
+Test = datacycle[sampleindex == 2,]
+dim(Train)
+dim(Test)
+```
+
+
+
+
+```{r}
+tdata = Train[3:14]
+tdata = cbind(tdata,Train[18])
+
+```
+
+
+```{r}
+library(OneR)
+m =  optbin(tdata)
+mod = OneR(m)
+summary(mod)
+```
+```{r}
+predictmod = predict(mod,Test)
+eval_model(predictmod, Test)
+```
